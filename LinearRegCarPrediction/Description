@@ -1,0 +1,1 @@
+Creates a simple linear regression model that takes in 3 features (Year, Present Price, KMs Driven) and outputs a selling price
