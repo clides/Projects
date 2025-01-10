@@ -1,15 +1,24 @@
+import os
 import numpy as np
 import cv2
-import os
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from keras.preprocessing.image import ImageDataGenerator
-from keras.utils.np_utils import to_categorical
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.layers import Input
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 
 ########################## Initializations
 path = 'myData'
 testRatio = 0.2
 validationRatio = 0.2
+imageDimensions = (32, 32, 3)
+batch_size = 50
+epochs_value = 10
+steps_per_epoch = 2000
 ##########################
 
 images = []
@@ -26,7 +35,7 @@ for folder_num in range(numberOfClasses):
     
     for pict_path in myPictList:
         curImg = cv2.imread(path + '/' + str(folder_num) + '/' + pict_path)
-        curImg = cv2.resize(curImg,(32, 32))
+        curImg = cv2.resize(curImg,(imageDimensions[0], imageDimensions[1]))
         
         images.append(curImg)
         classNumber.append(folder_num)
@@ -96,14 +105,15 @@ def preprocessImg(img):
     Returns:
     numpy.ndarray: The preprocessed image.
     """
-    # turn the image to grayscale
+    
+    # Convert to grayscale
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    # equalize the image to make the lighting distribution uniform
+    # Equalize the image histogram
     img = cv2.equalizeHist(img)
     
-    # normalize the image to make the pixel values between 0 and 1
-    img = img / 255
+    # Normalize the image to [0, 1] by dividing by 255
+    img = img / 255.0
     
     return img
 
@@ -117,12 +127,14 @@ X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], X_train.shape[2], 
 X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
 X_val = X_val.reshape(X_val.shape[0], X_val.shape[1], X_val.shape[2], 1)
 
-# modify images to make the dataset more generic
-dataGen = ImageDataGenerator(width_shift_range=0.1, 
-                             height_shift_range=0.1, 
-                             zoom_range=0.2, 
-                             shear_range=0.1, 
-                             rotation_range=10)
+# augment image to make it more generic
+dataGen = tf.keras.preprocessing.image.ImageDataGenerator(
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    zoom_range=0.2,
+    shear_range=0.1,
+    rotation_range=10
+)
 dataGen.fit(X_train)
 
 # one hot encoding the y data
@@ -131,5 +143,102 @@ y_test = to_categorical(y_test, numberOfClasses)
 y_val = to_categorical(y_val, numberOfClasses)
 
 
+#### Create model based on LuNet Model
+def myModel():
+    """
+    This function creates a model based on LuNet model.
+    
+    The model is a convolutional neural network (CNN) with 3 convolutional layers, 
+    2 maxpooling layers, 2 dropout layers, and a flatten layer. The output layer is 
+    a dense layer with the softmax activation function, which is used for multi-class 
+    classification.
+    
+    Parameters:
+    None
+    
+    Returns:
+    keras.Model: The model created.
+    """
+    # defining parameters to be used in the model
+    numberOfFilters = 60  # number of filters in the first 2 convolutional layers
+    sizeOfFilter1 = (5, 5)  # size of the filters in the first 2 convolutional layers
+    sizeOfFilter2 = (3, 3)  # size of the filters in the last convolutional layer
+    sizeOfPool = (2, 2)  # size of the max pooling layers
+    numberOfNodes = 500  # number of nodes in the dense layer
+    
+    model = Sequential()
+    
+    # first layer should use an Input layer instead of directly specifying input_shape in Conv2D
+    model.add(Input(shape=(imageDimensions[0], imageDimensions[1], 1)))  # Input layer
+    
+    # first convolutional layer
+    model.add(Conv2D(numberOfFilters, sizeOfFilter1, activation='relu'))
+    # second convolutional layer
+    model.add(Conv2D(numberOfFilters, sizeOfFilter1, activation='relu'))
+    # first maxpooling layer
+    model.add(MaxPooling2D(pool_size=sizeOfPool))
+    # third convolutional layer
+    model.add(Conv2D(numberOfFilters//2, sizeOfFilter2, activation='relu'))
+    # fourth convolutional layer
+    model.add(Conv2D(numberOfFilters//2, sizeOfFilter2, activation='relu'))
+    # second maxpooling layer
+    model.add(MaxPooling2D(pool_size=sizeOfPool))
+    # first dropout layer
+    model.add(Dropout(0.5))
+    
+    # flatten the output of the convolutional layers
+    model.add(Flatten())
+    # first dense layer
+    model.add(Dense(numberOfNodes, activation='relu'))
+    # second dropout layer
+    model.add(Dropout(0.5))
+    # output layer
+    model.add(Dense(numberOfClasses, activation='softmax'))
+    # compile the model
+    model.compile(Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
 
-#### Create model
+model = myModel()
+print(model.summary())
+
+# train the model
+history = model.fit(
+    dataGen.flow(X_train, y_train, batch_size=batch_size), 
+    steps_per_epoch = steps_per_epoch,
+    epochs = epochs_value, 
+    validation_data = (X_val, y_val),
+    shuffle = True
+)
+
+# Plotting the loss
+def plot_loss(history):
+    plt.figure(1)
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.legend(['training', 'validation'])
+    plt.title('Loss')
+    plt.xlabel('Epochs')
+    plt.savefig("loss.png")
+    plt.show()
+    
+# Plotting the accuracy
+def plot_accuracy(history):
+    plt.figure(2)
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.legend(['training', 'validation'])
+    plt.title('Accuracy')
+    plt.xlabel('Epochs')
+    plt.savefig("accuracy.png")
+    plt.show()
+    
+# Evaluating the model
+score = model.evaluate(X_test, y_test, verbose=0)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
+
+plot_loss(history)
+plot_accuracy(history)
+
+# save the model
+model.save('DigitDetectionCNN.h5')
