@@ -1,4 +1,4 @@
-Key takeaways:
+**Key takeaways**:
 - Using sklearn to split data into training, testing, validation sets
 - Using matplotlib to visualize data
 - Using cv2 to preprocess image (image -> grayscale -> equalize -> normalize)
@@ -21,3 +21,12 @@ Key takeaways:
         - Connect every neuron (unit) from the previous layer to every neuron in the current layer, enabling complex transformations and learning of high-level features
 - Training the model and plotting the loss and accuracy with matplotlib
 - Loading the trained model and making predictions
+
+**Summary of Workflow**
+1. Importing all the image data from the folder and converting them to numpy arrays
+2. Splitting the data into training, testing, and validation sets
+3. Preprocessing each image (image -> grayscale -> equalize -> normalize -> adding depth so it work with CNN -> augmenting it); one-hot encoding the labels (y values)
+4. Create model based on LuNet Model (with convolutional layers, dense layers, dropout layers, flatten layers, pooling layers, and non-linear activation functions)
+5. Training the model
+6. Plotting the loss and accuracy
+7. Evaluating the model
