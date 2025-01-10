@@ -5,10 +5,10 @@ from tensorflow.keras.models import load_model
 
 # Load the model weights
 def intializePredictionModel():
-    model = load_model('Resources/digit_recognition.h5')
+    model = load_model('Resources/DigitDetectionCNN.h5')
     return model
 
-# 1. Preprocessing the image
+########### 1. Preprocessing the image
 def preProcess(img):
     """
     Preprocess an image to prepare it for feature extraction.
@@ -29,7 +29,7 @@ def preProcess(img):
     return imgThreshold
 
 
-# 2. Finding the biggest contour to assure that the sudoku is in the image
+########### 2. Finding the biggest contour to assure that the sudoku is in the image
 def biggestContour(contours):
     """
     Finds the biggest contour in the image, which should be the sudoku puzzle.
@@ -63,7 +63,7 @@ def biggestContour(contours):
     return corners, max_area
 
 
-# 3. Reorder the corners of the sudoku puzzle so it works with cv2.warpPerspective
+########### 3. Reorder the corners of the sudoku puzzle so it works with cv2.warpPerspective
 def reorder(myPoints):
     """
     Reorders the points of a contour so that it works with cv2.warpPerspective.
@@ -102,7 +102,7 @@ def reorder(myPoints):
     return myPointsNew
 
 
-# 4. Split the image into 81 boxes
+########### 4. Split the image into 81 boxes
 def splitBoxes(img):
     """
     Splits the given image into 81 smaller boxes (9x9 grid).
@@ -126,7 +126,7 @@ def splitBoxes(img):
     return boxes
 
 
-# 5. Get predictions on all the boxes
+########### 5. Get predictions on all the boxes
 def getPrediction(boxes, model):
     """
     Gets the predictions for a list of boxes using the given model.
@@ -144,13 +144,13 @@ def getPrediction(boxes, model):
         img = np.asarray(image)
         # Remove the border of 4 pixels from the box
         img = img[4:img.shape[0] - 4, 4:img.shape[1] - 4]
-        # Resize the box to 28x28 pixels
-        img = cv2.resize(img, (28, 28))
+        # Resize the box to 32x32 pixels
+        img = cv2.resize(img, (32, 32))
         # Normalize the pixel values to be between 0 and 1
         img = img / 255.0
         # Reshape the box to be compatible with the model
-        img = img.reshape(28, 28, 1)
-        img = np.expand_dims(img, axis=0)  # Add batch dimension (1, 28, 28, 1)
+        img = img.reshape(32, 32, 1)
+        img = np.expand_dims(img, axis=0)  # Add batch dimension (1, 32, 32, 1)
         
         # Get the prediction
         predictions = model.predict(img)  # Get the predicted class probabilities
@@ -158,7 +158,7 @@ def getPrediction(boxes, model):
         probabilityValue = np.max(predictions)  # Get the maximum probability
         
         # Save the result if the confidence is high enough
-        if probabilityValue > 0.8:
+        if probabilityValue > 0.65:
             result.append(classIndex[0])  # Append the predicted class index
         else:
             result.append(0)  # If confidence is low, append 0 (unknown class)
@@ -166,7 +166,36 @@ def getPrediction(boxes, model):
     return result
 
 
-# 6. Stack all the images in one window
+########### 5. Display the numbers on the page
+def displayNumbers(img, numbers, color = (0, 255, 0)):
+    """
+    Displays the given numbers on the given image.
+
+    Parameters:
+    img (numpy.ndarray): The image to draw the numbers on.
+    numbers (list): A list of numbers (0-9) to be displayed on the image.
+    color (tuple): The color of the text (BGR format). Defaults to green.
+
+    Returns:
+    numpy.ndarray: The image with the numbers drawn on it.
+    """
+    # Calculate the width and height of each cell in the Sudoku grid
+    secW = int(img.shape[1] / 9)
+    secH = int(img.shape[0] / 9)
+    
+    # Loop over each cell in the grid in [y, x] format
+    for x in range(0, 9):
+        for y in range(0, 9):
+            # If the number in the current cell is not 0, draw it on the image
+            if numbers[(y * 9) + x] != 0:
+                cv2.putText(img, str(numbers[(y * 9) + x]),
+                            (x * secW + int(secW / 2) - 10, int((y + 0.8) * secH)),
+                            cv2.FONT_HERSHEY_COMPLEX_SMALL,
+                            2, color, 2, cv2.LINE_AA)
+    return img
+
+
+########### 6. Stack all the images in one window
 def stackImages(imgArray, scale):
     """
     Stacks a list of images into a single image for display. Supports both 2D and 3D arrays of images.
