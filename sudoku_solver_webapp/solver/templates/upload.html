@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Solver</title>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #444;
+        }
+
+        .container {
+            max-width: 900px;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #333;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            padding: 14px;
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            display: block;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 16px;
+            cursor: pointer;
+            background: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #0056b3;
+        }
+
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 14px 22px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.3);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 6px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        #image-container {
+            display: flex;
+            justify-content: space-evenly;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .image-box {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 200px;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            display: none;
+            margin-top: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden { display: none; }
+        .image-box h3 { color: #333; font-size: 20px; font-weight: 500; }
+        .image-box p { color: #666; font-size: 14px; margin-top: 10px; }
+
+        #error-message {
+            color: red;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsiveness for small screens */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            #image-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .image-box {
+                min-width: 90%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Upload Sudoku Image</h2>
+
+        <form id="upload-form" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="image" id="image-input" accept="image/*">
+            <button type="submit">Upload</button>
+        </form>
+
+        <div id="error-message" class="hidden"></div>
+
+        <div id="image-container">
+            <div class="image-box">
+                <h3>Uploaded Image</h3>
+                <img id="uploaded-image" alt="Uploaded Sudoku">
+                <p>Upload a Sudoku image to solve it.</p>
+                <button id="solve-button" class="hidden">Solve Sudoku</button>
+            </div>
+            <div class="image-box">
+                <h3>Solved Sudoku</h3>
+                <img id="solved-image" alt="Solved Sudoku">
+                <p>Your solved Sudoku puzzle will appear here.</p>
+            </div>
+        </div>
+
+        <div class="loading-spinner"></div>
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#upload-form").submit(function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+                $("#solve-button, #uploaded-image").hide();
+                $("#error-message").addClass("hidden");
+
+                $.ajax({
+                    url: "{% url 'upload_image' %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhrFields: { responseType: "blob" },
+                    success: function (response) {
+                        var imageUrl = URL.createObjectURL(response);
+                        $("#uploaded-image").attr("src", imageUrl).fadeIn();
+                        $("#solve-button").fadeIn().data("image-file", formData.get("image"));
+                    },
+                    error: function () {
+                        $("#error-message").removeClass("hidden").text("Error uploading the image. Please try again.");
+                    }
+                });
+            });
+
+            $("#solve-button").click(function () {
+                var imageFile = $(this).data("image-file");
+                var formData = new FormData();
+                formData.append("image", imageFile);
+                formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+                $("#solved-image").hide();
+                $(".loading-spinner").show();
+
+                $.ajax({
+                    url: "{% url 'solve_sudoku_image' %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhrFields: { responseType: "blob" },
+                    success: function (response, status, xhr) {
+                        var contentType = xhr.getResponseHeader("content-type");
+                        $(".loading-spinner").hide();
+
+                        if (contentType.includes("image")) {
+                            var imageUrl = URL.createObjectURL(response);
+                            $("#solved-image").attr("src", imageUrl).fadeIn();
+                        } else {
+                            $("#error-message").removeClass("hidden").text("Unexpected response format.");
+                        }
+                    },
+                    error: function () {
+                        $(".loading-spinner").hide();
+                        $("#error-message").removeClass("hidden").text("Error solving the Sudoku puzzle.");
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

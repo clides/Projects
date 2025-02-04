@@ -158,7 +158,7 @@ def getPrediction(boxes, model):
         probabilityValue = np.max(predictions)  # Get the maximum probability
         
         # Save the result if the confidence is high enough
-        if probabilityValue > 0.65:
+        if probabilityValue > 0.7:
             result.append(classIndex[0])  # Append the predicted class index
         else:
             result.append(0)  # If confidence is low, append 0 (unknown class)
