@@ -3,6 +3,7 @@ import cv2
 import os
 
 # https://github.com/richzhang/colorization/tree/caffe/colorization/models
+# Download the caffemodel: https://www.dropbox.com/s/dx0qvhhp5hbcx7z/colorization_release_v2.caffemodel?dl=1
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 prototxt_path = os.path.join(base_path, "models/colorization_deploy_v2.prototxt")
