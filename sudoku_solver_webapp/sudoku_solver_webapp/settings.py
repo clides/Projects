@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-3(iy&5!d^lg^=(n4+5f1ff7qzfljz2fwumx99f$u+h@evt%#5j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1',  # Allow localhost
+    'localhost',  # Allow localhost
+    'sudokuvision.onrender.com',  # Allow your deployed domain
+]
 
 
 # Application definition
