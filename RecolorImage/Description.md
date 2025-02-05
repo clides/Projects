@@ -13,3 +13,5 @@ Links:
 - Data preprocessing to make it work with the model
 
 **Media**
+![black and white image](https://github.com/clides/Projects/blob/main/RecolorImage/bw.jpg)
+![recolored image](https://github.com/clides/Projects/blob/main/RecolorImage/colorized.jpg)
