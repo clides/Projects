@@ -41,3 +41,9 @@ def check_subreddit_sentiment(subreddit_name, number_of_posts):
 
 subreddit_name, positives, negatives = check_subreddit_sentiment('PTCGP', 20)
 print(f"Subreddit: {subreddit_name}, Positives: {positives}, Negatives: {negatives}")
+
+''' 
+Possible ideas to implement:
+1. If post is positive or negative, check if the comments correlates to it
+2. 
+'''
