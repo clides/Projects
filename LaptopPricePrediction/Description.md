@@ -14,3 +14,5 @@ Training a model based on a kaggle dataset which contains a lot of categorical d
     - First split the data from limited_df (one with the most relevant features)
     - Then use StandardScaler() to scale X_train and X_test
 - Plotting the prediction to visualize how accurate the model is (the closer the points are to the line the more accurate it is)
+
+**Result:** score of 0.8312756168295186
