@@ -1,8 +1,8 @@
 Collection of personal projects I have worked on in my journey of learning AI/ML and Deep Learning
 
 # Most notable and my favorite projects:
-1. **OpenCVSudokuSolver**
-![results](https://github.com/clides/Projects/blob/main/OpenCVSudokuSolver/result.jpg)
+1. **OpenCVSudokuSolver (web app)**
+![results](https://github.com/clides/Projects/blob/main/OpenCVSudokuSolver/Resources/ss.png)
 
 
 2. **StockPrediction**
