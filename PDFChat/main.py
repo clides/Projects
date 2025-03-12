@@ -23,7 +23,7 @@ def setup_qa_system(file_path, seed=42):
     docs = loader.load_and_split()  # splitting the pdf into separate pieces
     
     # splitting the document
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=200)
     chunks = text_splitter.split_documents(docs)
     
     # creating the embeddings model
